@@ -88,7 +88,18 @@ class CalculatorTest {
         assertEquals(expected, actual);
     }
 
-
+    @Test
+    @DisplayName("Should display negative result after substracting two numbers")
+    void testDivideByZero() {
+        Calculator calc = new Calculator();
+        calc.pressDigitKey(5);
+        calc.pressBinaryOperationKey("-");
+        calc.pressDigitKey(7);
+        calc.pressEqualsKey();
+        String expected = "-2";
+        String actual = calc.readScreen();
+        assertEquals(expected, actual);
+    }
     //TODO hier weitere Tests erstellen
 }
 
