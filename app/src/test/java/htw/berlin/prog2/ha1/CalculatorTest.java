@@ -25,6 +25,32 @@ class CalculatorTest {
 
         assertEquals(expected, actual);
     }
+    @Test
+    @DisplayName("Should display negative result after subtracting two numbers")
+    void testDivideByZero() {
+        Calculator calc = new Calculator();
+        calc.pressDigitKey(5);
+        calc.pressBinaryOperationKey("-");
+        calc.pressDigitKey(7);
+        calc.pressEqualsKey();
+        String expected = "-2";
+        String actual = calc.readScreen();
+        assertEquals(expected, actual);
+    }
+    @Test
+    @DisplayName("Should use latest binary operation key after multiple use")
+    void testLatestBinaryOperation() {
+        Calculator calc = new Calculator();
+        calc.pressDigitKey(5);
+        calc.pressBinaryOperationKey("-");
+        calc.pressBinaryOperationKey("+");
+        calc.pressBinaryOperationKey("x");
+        calc.pressDigitKey(5);
+        calc.pressEqualsKey();
+        String expected = "25";
+        String actual = calc.readScreen();
+        assertEquals(expected, actual);
+    }
 
     @Test
     @DisplayName("should display result after getting the square root of two")
@@ -88,18 +114,36 @@ class CalculatorTest {
         assertEquals(expected, actual);
     }
 
+
+
     @Test
-    @DisplayName("Should display negative result after substracting two numbers")
-    void testDivideByZero() {
+    @DisplayName("Should Memorize the result of a binary operation in order to let another binary operation follow")
+    void testTemporaryStorage() {
         Calculator calc = new Calculator();
-        calc.pressDigitKey(5);
-        calc.pressBinaryOperationKey("-");
-        calc.pressDigitKey(7);
+        calc.pressDigitKey(3);
+        calc.pressBinaryOperationKey("+");
+        calc.pressDigitKey(3);
+        calc.pressBinaryOperationKey("+");
+        calc.pressDigitKey(3);
         calc.pressEqualsKey();
-        String expected = "-2";
+        String expected = "9";
+        String actual = calc.readScreen();
+        assertEquals(expected, actual);
+
+
+    }
+
+
+    @Test
+    @DisplayName("Should screen error when trying to divide through zero")
+    void testInversionOfZero () {
+
+        Calculator calc = new Calculator();
+        calc.pressDigitKey(0);
+        calc.pressUnaryOperationKey("1/x");
+        String expected = "Error";
         String actual = calc.readScreen();
         assertEquals(expected, actual);
     }
-    //TODO hier weitere Tests erstellen
 }
 
