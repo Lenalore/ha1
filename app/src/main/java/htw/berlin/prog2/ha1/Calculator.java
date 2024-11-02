@@ -1,5 +1,7 @@
 package htw.berlin.prog2.ha1;
 
+import java.util.Objects;
+
 /**
  * Eine Klasse, die das Verhalten des Online Taschenrechners imitiert, welcher auf
  * https://www.online-calculator.com/ aufgerufen werden kann (ohne die Memory-Funktionen)
@@ -14,7 +16,8 @@ public class Calculator {
 
     private String latestOperation = "";
 
-    private double memory = 0.0;
+    private boolean isNewOperation = false;
+
 
     /**
      * @return den aktuellen Bildschirminhalt als String
@@ -31,11 +34,15 @@ public class Calculator {
      * @param digit Die Ziffer, deren Taste gedrückt wurde
      */
     public void pressDigitKey(int digit) {
-        if(digit > 9 || digit < 0) throw new IllegalArgumentException();
+        if (digit < 0 || digit > 9) throw new IllegalArgumentException();
 
-        if(screen.equals("0") || latestValue == Double.parseDouble(screen)) screen = "";
+        if (screen.equals("0") || isNewOperation && screen.equals("")) {
+            screen = String.valueOf(digit);
 
-        screen = screen + digit;
+            //isNewOperation = false;
+        } else {
+            screen += digit;
+        }
     }
 
     /**
@@ -53,36 +60,42 @@ public class Calculator {
     }
 
     /**
-     * Empfängt den Wert einer gedrückten binären Operationstaste, also eine der vier Operationen
+     * Empfängt den Wert einer gedrückten binären Operationstasten, also eine der vier Operationen
      * Addition, Substraktion, Division, oder Multiplikation, welche zwei Operanden benötigen.
      * Beim ersten Drücken der Taste wird der Bildschirminhalt nicht verändert, sondern nur der
      * Rechner in den passenden Operationsmodus versetzt.
-     * Beim zweiten Drücken nach Eingabe einer weiteren Zahl wird direkt des aktuelle Zwischenergebnis
-     * auf dem Bildschirm angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
+     * Beim zweiten Drücken nach Eingabe einer weiteren Zahl wird direkt das aktuelle Zwischenergebnis
+     * über die Hilsfunktion calculateResult berechnet und auf dem Bildschirm angezeigt.
      * @param operation "+" für Addition, "-" für Substraktion, "x" für Multiplikation, "/" für Division
      */
-    public void pressBinaryOperationKey(String operation)  {
-        latestValue = Double.parseDouble(screen);
+
+    public void pressBinaryOperationKey(String operation) {
+        if (!screen.isEmpty()) {
+            if (isNewOperation == true && !operation.equals("")) {
+                calculateResult();
+
+            }else {
+                latestValue = Double.parseDouble(screen);
+
+            }
+        }
         latestOperation = operation;
-        var result = switch(latestOperation) {
-            case "+" -> latestValue + Double.parseDouble(screen);
-            case "-" -> latestValue - Double.parseDouble(screen);
-            case "x" -> latestValue * Double.parseDouble(screen);
-            case "/" -> latestValue / Double.parseDouble(screen);
-            default -> throw new IllegalArgumentException();
-        };
-
-
+        isNewOperation = true;
+        screen = "";
     }
+
 
     /**
      * Empfängt den Wert einer gedrückten unären Operationstaste, also eine der drei Operationen
      * Quadratwurzel, Prozent, Inversion, welche nur einen Operanden benötigen.
      * Beim Drücken der Taste wird direkt die Operation auf den aktuellen Zahlenwert angewendet und
      * der Bildschirminhalt mit dem Ergebnis aktualisiert.
+     * Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
+     * Außerdem werden Unendlichkeit & NaN als "Error" ausgegeben.
      * @param operation "√" für Quadratwurzel, "%" für Prozent, "1/x" für Inversion
      */
     public void pressUnaryOperationKey(String operation) {
+
         latestValue = Double.parseDouble(screen);
         latestOperation = operation;
         var result = switch(operation) {
@@ -126,26 +139,47 @@ public class Calculator {
      * Empfängt den Befehl der gedrückten "="-Taste.
      * Wurde zuvor keine Operationstaste gedrückt, passiert nichts.
      * Wurde zuvor eine binäre Operationstaste gedrückt und zwei Operanden eingegeben, wird das
-     * Ergebnis der Operation angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
+     * Ergebnis der Operation über die Hilfsmethode calculateResult berechnet.
      * Wird die Taste weitere Male gedrückt (ohne andere Tasten dazwischen), so wird die letzte
      * Operation (ggf. inklusive letztem Operand) erneut auf den aktuellen Bildschirminhalt angewandt
      * und das Ergebnis direkt angezeigt.
      */
     public void pressEqualsKey() {
-        var result = switch(latestOperation) {
-            case "+" -> latestValue + Double.parseDouble(screen);
-            case "-" -> latestValue - Double.parseDouble(screen);
-            case "x" -> latestValue * Double.parseDouble(screen);
-            case "/" -> latestValue / Double.parseDouble(screen);
+        if (!latestOperation.isEmpty() && !screen.equals("")) {
+            calculateResult();
+            latestOperation = "";
+        }
+    }
+
+    /**
+     * Öffentliche Hilfsmethode zum Berechnen der binären Operationen.
+     * Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
+     * Außerdem werden Unendlichkeit & NaN als "Error" ausgegeben.
+     * Die Länge des Ergebnis wird auf die Anzahl von 11 Zeichen reduziert um die Darstellbarkeit im "Display" zu gewährleisten.
+     * Kommazahlen werden so eingekürzt, dass nur eine Null im Nachkommabereich angezeigt wird.
+     * Benutzt die selben Paramter wie die Methode pressBinaryOperationKey.
+     * Im Falle einer Zwischenspeicherberechnung wird das Ergebnis zur Weiterberechnung in latestValue gespeichert.
+     */
+    public void calculateResult() {
+        double currentValue = Double.parseDouble(screen);
+        double result = switch (latestOperation) {
+            case "+" -> latestValue + currentValue;
+            case "-" -> latestValue - currentValue;
+            case "x" -> latestValue * currentValue;
+            case "/" -> currentValue == 0 ? Double.NaN : latestValue / currentValue;
             default -> throw new IllegalArgumentException();
         };
         screen = Double.toString(result);
-        if(screen.equals("Infinity")) screen = "Error";
-        if(screen.endsWith(".0")) screen = screen.substring(0,screen.length()-2);
-        if(screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
+        if (screen.equals("NaN")) screen = "Error";
+        if (screen.equals("Infinity")) screen = "Error";
+        if (screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
+        if (screen.endsWith(".0")) screen = screen.substring(0, screen.length() - 2);
+        latestValue = result;
     }
-
-
-
-
 }
+
+
+
+
+
+

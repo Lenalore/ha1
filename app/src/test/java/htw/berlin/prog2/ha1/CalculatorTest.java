@@ -122,9 +122,9 @@ class CalculatorTest {
         Calculator calc = new Calculator();
         calc.pressDigitKey(3);
         calc.pressBinaryOperationKey("+");
-        calc.pressDigitKey(3);
+        calc.pressDigitKey(4);
         calc.pressBinaryOperationKey("+");
-        calc.pressDigitKey(3);
+        calc.pressDigitKey(2);
         calc.pressEqualsKey();
         String expected = "9";
         String actual = calc.readScreen();
